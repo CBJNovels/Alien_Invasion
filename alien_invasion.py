@@ -1,9 +1,14 @@
 import sys
 import pygame
+from pygame.sprite import Group
 
 from settings import Settings
-import game_functions as gf #简称
+from game_stats import GameStats
 from ship import Ship
+from alien import Alien
+from button import Button
+from scoreboard import Scoreboadr
+import game_functions as gf #简称
 
 def run_game():
     #初始化游戏并创建一个对象
@@ -14,16 +19,36 @@ def run_game():
         (ai_settings.screen_width,ai_settings.screen_height))
     pygame.display.set_caption("Alien Invasion")
 
-    #创建一艘飞船
-    ship=Ship(screen)
+    #创建一个用于存储游戏统计信息的实例，并创建记分牌
+    stats = GameStats(ai_settings)
+    sb = Scoreboadr(ai_settings, screen, stats)
+
+    #创建Play按钮
+    play_button = Button(ai_settings, screen, "Play")
+
+    #创建一艘飞船、一个子弹编组、一个外星人编组
+    ship=Ship(ai_settings,screen)
+    bullets = Group()
+    aliens = Group()
+
+    #创建外星人群
+    gf.create_fleet(ai_settings,screen,ship,aliens)
 
     #开始游戏的主循环
     while True:
         #监视键盘和鼠标事件
-        gf.check_events(ship)
-        #每次循环都重绘屏幕
-        ship.update()
-        gf.update_screen(ai_settings,screen,ship)
+        gf.check_events(ai_settings, screen, stats, sb, play_button, ship,
+                        aliens, bullets)
+        if stats.game_active:
+            #每次循环都重绘屏幕
+            ship.update()
+            bullets.update()
+            gf.update_bullets(ai_settings, screen, stats, sb, ship, aliens,
+                              bullets)
+            gf.update_aliens(ai_settings, screen, stats, sb, ship, aliens,
+                             bullets)
+        gf.update_screen(ai_settings, screen, stats, sb, ship, aliens, bullets,
+                         play_button)
 
         #让最近绘制的屏幕可见
         pygame.display.flip()
